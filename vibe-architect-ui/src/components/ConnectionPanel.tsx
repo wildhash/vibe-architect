@@ -30,6 +30,9 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
       if (audioDeviceId && !audioInputs.some((d) => d.deviceId === audioDeviceId)) {
         setAudioDeviceId("");
+        setDeviceError(
+          "Selected audio input is no longer available; reverted to default input."
+        );
       }
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : "Failed to list audio devices.");
@@ -62,6 +65,8 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   }, [refreshAudioDevices]);
 
   useEffect(() => {
+    if (!navigator.mediaDevices) return;
+
     void refreshAudioDevices();
 
     const handler = () => {
