@@ -1,0 +1,643 @@
+/* styles.css — Vibe Architect global styles */
+
+/* --- Reset & base -------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1e1e1e;
+  --border: #2a2a2a;
+  --neon: #00ffcc;
+  --neon2: #ff00ff;
+  --neon3: #ffcc00;
+  --text: #e8e8e8;
+  --text-muted: #666;
+  --text-dim: #999;
+  --red: #ff3b3b;
+  --font: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --transition: 0.15s ease;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Scrollbar ----------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* --- Connection screen --------------------------------------------------- */
+.connection-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.connection-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.connection-panel h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--neon);
+}
+
+.connection-panel p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.field input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.field input:focus {
+  border-color: var(--neon);
+}
+
+.btn-connect {
+  background: var(--neon);
+  border: none;
+  border-radius: var(--radius);
+  color: #000;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1.5rem;
+  transition: opacity var(--transition);
+  text-transform: uppercase;
+}
+
+.btn-connect:hover {
+  opacity: 0.85;
+}
+
+.btn-connect:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  color: var(--red);
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 59, 59, 0.1);
+  border: 1px solid rgba(255, 59, 59, 0.25);
+  border-radius: var(--radius);
+}
+
+/* --- Main layout --------------------------------------------------------- */
+.app-layout {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 320px 1fr 300px;
+  gap: 1px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.panel {
+  background: var(--bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Status bar ---------------------------------------------------------- */
+.status-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.6rem 1.25rem;
+  height: 48px;
+}
+
+.status-bar .brand {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--neon);
+  text-transform: uppercase;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.status-dot.connected {
+  background: var(--neon);
+  box-shadow: 0 0 6px var(--neon);
+}
+
+.status-dot.connecting {
+  background: var(--neon3);
+  animation: pulse 1s infinite;
+}
+
+.status-dot.error {
+  background: var(--red);
+}
+
+.status-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.status-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.status-metric span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.status-bar .spacer {
+  flex: 1;
+}
+
+/* --- Crowd Cam ----------------------------------------------------------- */
+.crowd-cam {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cam-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cam-wrapper {
+  position: relative;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+}
+
+.cam-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cam-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cam-overlay {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.cam-badge {
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 4px;
+  color: var(--neon);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.4rem;
+  text-transform: uppercase;
+}
+
+.energy-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.energy-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.energy-score {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--neon);
+}
+
+.energy-bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.energy-bar {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--surface2);
+  height: 18px;
+  transition: background var(--transition);
+}
+
+.energy-bar.active {
+  background: var(--neon);
+}
+
+.energy-bar.active.high {
+  background: var(--neon2);
+}
+
+/* --- Center panel ------------------------------------------------------- */
+.center-panel {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.phase-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.phase-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.phase-value {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1;
+}
+
+.phase-value.drop {
+  color: var(--neon2);
+}
+
+.phase-value.build {
+  color: var(--neon3);
+}
+
+.phase-value.groove {
+  color: var(--neon);
+}
+
+/* --- Audio visualizer --------------------------------------------------- */
+.audio-visualizer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-height: 80px;
+  position: relative;
+}
+
+.visualizer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.visualizer-placeholder {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  height: 60px;
+}
+
+.viz-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--neon);
+  opacity: 0.7;
+  animation: viz-bounce 0.8s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* --- Recommendation ----------------------------------------------------- */
+.recommendation-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rec-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rec-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.rec-meta span {
+  color: var(--neon);
+  font-weight: 600;
+}
+
+.rec-notes {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* --- Visual trigger ----------------------------------------------------- */
+.visual-trigger-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vis-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.vis-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.vis-pattern {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vis-details {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+/* --- Event log ---------------------------------------------------------- */
+.event-log {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.event-log-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.event-item {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.72rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.event-item .event-type {
+  flex-shrink: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+}
+
+.event-item.energy .event-type { color: var(--neon); }
+.event-item.recommendation .event-type { color: var(--neon3); }
+.event-item.visual_trigger .event-type { color: var(--neon2); }
+.event-item.phase_change .event-type { color: #7b61ff; }
+.event-item.warning .event-type { color: var(--red); }
+.event-item.status .event-type { color: var(--text-dim); }
+
+.event-item .event-text {
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.event-ts {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  opacity: 0.5;
+}
+
+/* --- Control strip ------------------------------------------------------ */
+.control-strip {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1.25rem;
+  height: 56px;
+}
+
+.control-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 0.75rem;
+  text-transform: uppercase;
+  transition: border-color var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+
+.control-btn.active {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.control-btn.active.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.control-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.control-strip .spacer {
+  flex: 1;
+}
+
+.disconnect-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 0.75rem;
+  text-transform: uppercase;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.disconnect-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* --- Animations --------------------------------------------------------- */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes viz-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+/* --- Responsive --------------------------------------------------------- */
+@media (max-width: 900px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .app-layout {
+    height: auto;
+    min-height: 100vh;
+  }
+}
