@@ -134,6 +134,18 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             ))}
           </select>
 
+          {audioDevices.length === 0 ? (
+            <div className="help-text">
+              No audio inputs detected. If you are routing a DJ master output, make sure your
+              virtual cable or USB audio interface is installed and connected.
+            </div>
+          ) : (
+            <div className="help-text">
+              Select your virtual cable or line-in (e.g., BlackHole 2ch, CABLE Output, USB
+              interface) for clean BPM/drop analysis.
+            </div>
+          )}
+
           {!hasDeviceLabels && (
             <button
               type="button"

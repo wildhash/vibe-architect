@@ -98,6 +98,11 @@ body,
   color: var(--text-dim);
 }
 
+.help-text {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 .field input {
   background: var(--surface2);
   border: 1px solid var(--border);
