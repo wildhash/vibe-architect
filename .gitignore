@@ -1,0 +1,27 @@
+# Python
+agent/.venv/
+agent/__pycache__/
+agent/*.pyc
+agent/*.pyo
+agent/.env
+
+# Node
+vibe-architect-ui/node_modules/
+vibe-architect-ui/dist/
+vibe-architect-ui/.env.local
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info/
+dist/
+build/

@@ -1,0 +1,29 @@
+# Cloud Run deployment — Vibe Architect UI (static frontend via Nginx)
+# Deploy: gcloud run services replace deploy/cloudrun-ui.yaml --region us-central1
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: vibe-architect-ui
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 60
+      containers:
+        - image: gcr.io/YOUR_PROJECT_ID/vibe-architect-ui:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: VITE_LIVEKIT_URL
+              value: "wss://YOUR_LIVEKIT_HOST"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"

@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on: []
+    # Agent connects out to LiveKit — no inbound ports required
+    # If running a local LiveKit server, add depends_on: [livekit]
+
+  # Uncomment to run a local LiveKit server for development:
+  # livekit:
+  #   image: livekit/livekit-server:latest
+  #   ports:
+  #     - "7880:7880"
+  #     - "7881:7881"
+  #     - "7882:7882/udp"
+  #   environment:
+  #     - LIVEKIT_CONFIG_FILE=/livekit.yaml
+  #   volumes:
+  #     - ./livekit-dev.yaml:/livekit.yaml
