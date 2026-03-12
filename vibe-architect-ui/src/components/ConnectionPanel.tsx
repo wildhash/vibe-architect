@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 interface ConnectionPanelProps {
-  onConnect: (url: string, token: string) => void;
+  onConnect: (url: string, token: string, audioDeviceId?: string) => void;
   isConnecting: boolean;
   error?: string;
 }
@@ -11,10 +11,73 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [url, setUrl] = useState(getMockUrl());
   const [token, setToken] = useState(getMockToken());
 
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [audioDeviceId, setAudioDeviceId] = useState("");
+  const [deviceError, setDeviceError] = useState("");
+
+  const refreshAudioDevices = useCallback(async () => {
+    setDeviceError("");
+
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      setDeviceError("Audio device selection is not supported in this browser.");
+      return;
+    }
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter((d) => d.kind === "audioinput");
+      setAudioDevices(audioInputs);
+
+      if (audioDeviceId && !audioInputs.some((d) => d.deviceId === audioDeviceId)) {
+        setAudioDeviceId("");
+      }
+    } catch (err) {
+      setDeviceError(err instanceof Error ? err.message : "Failed to list audio devices.");
+    }
+  }, [audioDeviceId]);
+
+  const hasDeviceLabels = useMemo(() => {
+    if (audioDevices.length === 0) return true;
+    return audioDevices.some((d) => Boolean(d.label));
+  }, [audioDevices]);
+
+  const requestMicPermissionForLabels = useCallback(async () => {
+    setDeviceError("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setDeviceError("Microphone access is not supported in this browser.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false,
+      });
+      for (const track of stream.getTracks()) track.stop();
+      await refreshAudioDevices();
+    } catch (err) {
+      setDeviceError(err instanceof Error ? err.message : "Microphone permission denied.");
+    }
+  }, [refreshAudioDevices]);
+
+  useEffect(() => {
+    void refreshAudioDevices();
+
+    const handler = () => {
+      void refreshAudioDevices();
+    };
+
+    navigator.mediaDevices?.addEventListener?.("devicechange", handler);
+    return () => {
+      navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+    };
+  }, [refreshAudioDevices]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (url.trim() && token.trim()) {
-      onConnect(url.trim(), token.trim());
+      onConnect(url.trim(), token.trim(), audioDeviceId || undefined);
     }
   };
 
@@ -50,6 +113,35 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
           />
         </div>
 
+        <div className="field">
+          <label htmlFor="lk-audio-device">Audio Input Device</label>
+          <select
+            id="lk-audio-device"
+            value={audioDeviceId}
+            onChange={(e) => setAudioDeviceId(e.target.value)}
+            disabled={isConnecting}
+          >
+            <option value="">Default input</option>
+            {audioDevices.map((d, idx) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {d.label || `Audio input ${idx + 1}`}
+              </option>
+            ))}
+          </select>
+
+          {!hasDeviceLabels && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => void requestMicPermissionForLabels()}
+              disabled={isConnecting}
+            >
+              Allow mic access to show device names
+            </button>
+          )}
+        </div>
+
+        {deviceError && <div className="error-msg">{deviceError}</div>}
         {error && <div className="error-msg">{error}</div>}
 
         <button

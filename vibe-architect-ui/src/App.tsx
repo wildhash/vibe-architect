@@ -179,6 +179,7 @@ function BoothInterface({
 export default function App() {
   const [livekitUrl, setLivekitUrl] = useState("");
   const [token, setToken] = useState("");
+  const [audioDeviceId, setAudioDeviceId] = useState<string | undefined>(undefined);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState("");
   const [connected, setConnected] = useState(false);
@@ -190,11 +191,12 @@ export default function App() {
     suggestOnly: false,
   });
 
-  const handleConnect = useCallback((url: string, tok: string) => {
+  const handleConnect = useCallback((url: string, tok: string, selectedAudioDeviceId?: string) => {
     setConnectionError("");
     setIsConnecting(true);
     setLivekitUrl(url);
     setToken(tok);
+    setAudioDeviceId(selectedAudioDeviceId);
     setConnected(true);
   }, []);
 
@@ -225,11 +227,23 @@ export default function App() {
       serverUrl={livekitUrl}
       token={token}
       connect={true}
-      audio={true}
+      audio={{
+        deviceId: audioDeviceId ? { exact: audioDeviceId } : undefined,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: { ideal: 2 },
+      }}
       video={true}
       onDisconnected={handleDisconnect}
       onError={(err) => {
         setConnectionError(err.message);
+        setConnected(false);
+        setIsConnecting(false);
+      }}
+      onMediaDeviceFailure={(failure, kind) => {
+        if (!failure) return;
+        setConnectionError(`Media device failure (${kind ?? "unknown"}): ${failure}`);
         setConnected(false);
         setIsConnecting(false);
       }}
