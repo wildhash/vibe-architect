@@ -1,4 +1,14 @@
 steps:
+  - name: python:3.12-slim
+    dir: agent
+    entrypoint: python
+    args:
+      - -m
+      - py_compile
+      - agent.py
+      - tools.py
+      - state.py
+
   - name: gcr.io/cloud-builders/docker
     args:
       - build
