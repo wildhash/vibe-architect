@@ -7,10 +7,18 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+node_modules/
+
 .env
 *.log
 .DS_Store
 .git/
+
+*.pem
+*.key
+*.p12
+*_sa.json
+service-account*.json
 
 dist/
 build/
