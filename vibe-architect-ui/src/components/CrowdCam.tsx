@@ -12,14 +12,16 @@ export function CrowdCam({ energy, movement }: CrowdCamProps) {
   const { localParticipant } = useLocalParticipant();
 
   useEffect(() => {
-    if (!localParticipant || !videoRef.current) return;
+    if (!localParticipant) return;
+    const el = videoRef.current;
+    if (!el) return;
 
     const pub = localParticipant.getTrackPublication(Track.Source.Camera);
     const track = pub?.track;
     if (track) {
-      track.attach(videoRef.current);
+      track.attach(el);
       return () => {
-        track.detach(videoRef.current!);
+        track.detach(el);
       };
     }
   }, [localParticipant]);
