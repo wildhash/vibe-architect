@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -17,13 +17,13 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
+  const [enumerateError, setEnumerateError] = useState<string | null>(null);
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
-  const lastEnumerateErrorRef = useRef<string | null>(null);
 
   const refreshAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
       const msg = "Audio device selection is not supported in this browser.";
-      lastEnumerateErrorRef.current = msg;
+      setEnumerateError(msg);
       setDeviceError(msg);
       setHasEnumeratedDevices(true);
       return;
@@ -34,19 +34,18 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
 
-      setDeviceError((prev) => {
-        if (prev && prev === lastEnumerateErrorRef.current) return "";
-        return prev;
-      });
-      lastEnumerateErrorRef.current = null;
+      if (enumerateError) {
+        setDeviceError((prev) => (prev === enumerateError ? "" : prev));
+        setEnumerateError(null);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
-      lastEnumerateErrorRef.current = msg;
+      setEnumerateError(msg);
       setDeviceError(msg);
     } finally {
       setHasEnumeratedDevices(true);
     }
-  }, []);
+  }, [enumerateError]);
 
   useEffect(() => {
     if (!hasEnumeratedDevices) return;
@@ -57,10 +56,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     }
   }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
-  const hasDeviceLabels = useMemo(() => {
-    if (!hasEnumeratedDevices) return true;
-    if (audioDevices.length === 0) return false;
-    return audioDevices.some((d) => Boolean(d.label));
+  const shouldPromptForMicPermission = useMemo(() => {
+    if (!hasEnumeratedDevices) return false;
+    if (audioDevices.length === 0) return true;
+    return audioDevices.every((d) => !d.label);
   }, [audioDevices, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
@@ -168,7 +167,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             </div>
           )}
 
-          {!hasDeviceLabels && (
+          {shouldPromptForMicPermission && (
             <button
               type="button"
               className="btn-secondary"
