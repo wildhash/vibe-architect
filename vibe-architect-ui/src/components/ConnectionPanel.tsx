@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -18,12 +18,13 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
+  const lastEnumerateErrorRef = useRef<string | null>(null);
 
   const refreshAudioDevices = useCallback(async () => {
-    setDeviceError("");
-
     if (!navigator.mediaDevices?.enumerateDevices) {
-      setDeviceError("Audio device selection is not supported in this browser.");
+      const msg = "Audio device selection is not supported in this browser.";
+      lastEnumerateErrorRef.current = msg;
+      setDeviceError(msg);
       setHasEnumeratedDevices(true);
       return;
     }
@@ -32,8 +33,16 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
+
+      setDeviceError((prev) => {
+        if (prev && prev === lastEnumerateErrorRef.current) return "";
+        return prev;
+      });
+      lastEnumerateErrorRef.current = null;
     } catch (err) {
-      setDeviceError(err instanceof Error ? err.message : "Failed to list audio devices.");
+      const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
+      lastEnumerateErrorRef.current = msg;
+      setDeviceError(msg);
     } finally {
       setHasEnumeratedDevices(true);
     }
@@ -49,9 +58,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
   const hasDeviceLabels = useMemo(() => {
-    if (audioDevices.length === 0) return true;
+    if (!hasEnumeratedDevices) return true;
+    if (audioDevices.length === 0) return false;
     return audioDevices.some((d) => Boolean(d.label));
-  }, [audioDevices]);
+  }, [audioDevices, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
     setDeviceError("");
