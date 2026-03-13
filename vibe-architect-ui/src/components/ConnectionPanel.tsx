@@ -145,8 +145,6 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             value={audioDeviceId}
             onChange={(e) => {
               if (selectionError === MISSING_SELECTION_ERROR) setSelectionError("");
-              if (permissionError) setPermissionError("");
-              if (enumerationError) setEnumerationError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
