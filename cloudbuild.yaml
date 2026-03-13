@@ -15,11 +15,17 @@ steps:
       - -f
       - ./agent/Dockerfile
       - -t
-      - gcr.io/$PROJECT_ID/vibe-architect-agent:$SHORT_SHA
+      - ${_IMAGE_URI}:$SHORT_SHA
       - -t
-      - gcr.io/$PROJECT_ID/vibe-architect-agent:latest
+      - ${_IMAGE_URI}:latest
       - ./agent
 
 images:
-  - gcr.io/$PROJECT_ID/vibe-architect-agent:$SHORT_SHA
-  - gcr.io/$PROJECT_ID/vibe-architect-agent:latest
+  - ${_IMAGE_URI}:$SHORT_SHA
+  - ${_IMAGE_URI}:latest
+
+substitutions:
+  _IMAGE_URI: gcr.io/${PROJECT_ID}/vibe-architect-agent
+
+options:
+  dynamicSubstitutions: true
