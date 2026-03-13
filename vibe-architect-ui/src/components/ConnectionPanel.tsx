@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
+const MISSING_SELECTION_ERROR =
+  "Selected audio input is no longer available; reverted to default input.";
+
 interface ConnectionPanelProps {
   onConnect: (url: string, token: string, audioDeviceId?: string) => void;
   isConnecting: boolean;
@@ -15,9 +18,6 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
-
-  const missingSelectionError =
-    "Selected audio input is no longer available; reverted to default input.";
 
   const refreshAudioDevices = useCallback(async () => {
     setDeviceError("");
@@ -44,9 +44,9 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     if (!audioDeviceId) return;
     if (!audioDevices.some((d) => d.deviceId === audioDeviceId)) {
       setAudioDeviceId("");
-      setDeviceError(missingSelectionError);
+      setDeviceError(MISSING_SELECTION_ERROR);
     }
-  }, [audioDeviceId, audioDevices, hasEnumeratedDevices, missingSelectionError]);
+  }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
   const hasDeviceLabels = useMemo(() => {
     if (audioDevices.length === 0) return true;
@@ -133,7 +133,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             id="lk-audio-device"
             value={audioDeviceId}
             onChange={(e) => {
-              if (deviceError === missingSelectionError) setDeviceError("");
+              if (deviceError === MISSING_SELECTION_ERROR) setDeviceError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
