@@ -124,7 +124,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
           <select
             id="lk-audio-device"
             value={audioDeviceId}
-            onChange={(e) => setAudioDeviceId(e.target.value)}
+            onChange={(e) => {
+              setDeviceError("");
+              setAudioDeviceId(e.target.value);
+            }}
             disabled={isConnecting}
           >
             <option value="">Default input</option>
