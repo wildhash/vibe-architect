@@ -23,6 +23,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const enumerateSeqRef = useRef(0);
 
   useEffect(() => {
+    // Invalidate any in-flight enumerateDevices calls when unmounting.
     return () => {
       enumerateSeqRef.current += 1;
     };
@@ -73,6 +74,8 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     }
   }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
+  // Only show the mic permission CTA when enumeration succeeded; otherwise we'd be
+  // prompting for permission in cases where the real issue is enumeration/support.
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
     if (enumerationError) return false;
