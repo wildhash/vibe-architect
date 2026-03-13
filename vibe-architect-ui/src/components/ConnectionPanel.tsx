@@ -59,6 +59,12 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   }, []);
 
   useEffect(() => {
+    return () => {
+      enumerateSeqRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!hasEnumeratedDevices) return;
     if (!audioDeviceId) return;
     if (!audioDevices.some((d) => d.deviceId === audioDeviceId)) {
