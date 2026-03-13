@@ -20,7 +20,13 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [permissionError, setPermissionError] = useState("");
   const [selectionError, setSelectionError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
-  const deviceError = selectionError || permissionError || enumerationError;
+
+  const deviceError = useMemo(() => {
+    if (selectionError) return selectionError;
+    if (permissionError) return permissionError;
+    if (enumerationError) return enumerationError;
+    return "";
+  }, [enumerationError, permissionError, selectionError]);
 
   const refreshAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -54,10 +60,9 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
-    if (enumerationError) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
-  }, [audioDevices, enumerationError, hasEnumeratedDevices]);
+  }, [audioDevices, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
     setPermissionError("");
@@ -140,6 +145,8 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             value={audioDeviceId}
             onChange={(e) => {
               if (selectionError === MISSING_SELECTION_ERROR) setSelectionError("");
+              if (permissionError) setPermissionError("");
+              if (enumerationError) setEnumerationError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
