@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -16,15 +16,16 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [audioDeviceId, setAudioDeviceId] = useState("");
-  const [deviceError, setDeviceError] = useState("");
+  const [enumerationError, setEnumerationError] = useState("");
+  const [permissionError, setPermissionError] = useState("");
+  const [selectionError, setSelectionError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
-  const lastEnumerateErrorRef = useRef<string | null>(null);
+  const deviceError = selectionError || permissionError || enumerationError;
 
   const refreshAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
       const msg = "Audio device selection is not supported in this browser.";
-      lastEnumerateErrorRef.current = msg;
-      setDeviceError(msg);
+      setEnumerationError(msg);
       setHasEnumeratedDevices(true);
       return;
     }
@@ -33,16 +34,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
-
-      const lastEnumerateError = lastEnumerateErrorRef.current;
-      if (lastEnumerateError) {
-        setDeviceError((prev) => (prev === lastEnumerateError ? "" : prev));
-        lastEnumerateErrorRef.current = null;
-      }
+      setEnumerationError("");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
-      lastEnumerateErrorRef.current = msg;
-      setDeviceError(msg);
+      setEnumerationError(msg);
     } finally {
       setHasEnumeratedDevices(true);
     }
@@ -53,7 +48,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     if (!audioDeviceId) return;
     if (!audioDevices.some((d) => d.deviceId === audioDeviceId)) {
       setAudioDeviceId("");
-      setDeviceError(MISSING_SELECTION_ERROR);
+      setSelectionError(MISSING_SELECTION_ERROR);
     }
   }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
@@ -64,10 +59,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   }, [audioDevices, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
-    setDeviceError("");
+    setPermissionError("");
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setDeviceError("Microphone access is not supported in this browser.");
+      setPermissionError("Microphone access is not supported in this browser.");
       return;
     }
 
@@ -79,7 +74,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       for (const track of stream.getTracks()) track.stop();
       await refreshAudioDevices();
     } catch (err) {
-      setDeviceError(err instanceof Error ? err.message : "Microphone permission denied.");
+      setPermissionError(err instanceof Error ? err.message : "Microphone permission denied.");
     }
   }, [refreshAudioDevices]);
 
@@ -143,7 +138,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             id="lk-audio-device"
             value={audioDeviceId}
             onChange={(e) => {
-              if (deviceError === MISSING_SELECTION_ERROR) setDeviceError("");
+              if (selectionError) setSelectionError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
