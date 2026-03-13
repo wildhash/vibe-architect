@@ -12,12 +12,14 @@ steps:
             py_compile.compile(str(p), doraise=True)
 
   - name: gcr.io/cloud-builders/docker
-    entrypoint: bash
+    entrypoint: sh
     env:
       - BRANCH_NAME=$BRANCH_NAME
     args:
-      - -ceu
+      - -c
       - |
+        set -eu
+
         docker build \
           -f ./agent/Dockerfile \
           -t ${_IMAGE_URI}:$SHORT_SHA \
@@ -25,7 +27,7 @@ steps:
 
         docker push ${_IMAGE_URI}:$SHORT_SHA
 
-        if [[ "${_PUSH_LATEST}" == "true" || "${BRANCH_NAME}" == "main" ]]; then
+        if [ "${_PUSH_LATEST}" = "true" ] || [ "${BRANCH_NAME}" = "main" ]; then
           docker tag ${_IMAGE_URI}:$SHORT_SHA ${_IMAGE_URI}:latest
           docker push ${_IMAGE_URI}:latest
         fi
