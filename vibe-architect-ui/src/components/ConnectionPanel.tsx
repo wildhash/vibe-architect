@@ -23,7 +23,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const enumerateSeqRef = useRef(0);
 
   useEffect(() => {
-    // Invalidate any in-flight enumerateDevices calls when unmounting.
+    // Invalidate any in-flight enumerateDevices calls so they can't update state after unmount.
     return () => {
       enumerateSeqRef.current += 1;
     };
