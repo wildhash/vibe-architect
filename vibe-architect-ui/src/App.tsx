@@ -244,19 +244,12 @@ export default function App() {
       onMediaDeviceFailure={(failure, kind) => {
         if (!failure) return;
         const failureValue: unknown = failure;
-        let message: string;
-
-        if (typeof failureValue === "string") {
-          message = failureValue;
-        } else if (failureValue instanceof Error) {
-          message = failureValue.message;
-        } else {
-          try {
-            message = JSON.stringify(failureValue);
-          } catch {
-            message = String(failureValue);
-          }
-        }
+        const message =
+          typeof failureValue === "string"
+            ? failureValue
+            : failureValue instanceof Error
+              ? failureValue.message
+              : "Unexpected media device error";
 
         setConnectionError(`Media device failure (${kind ?? "unknown"}): ${message}`);
         if (kind === "audioinput") setAudioDeviceId(undefined);

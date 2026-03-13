@@ -22,9 +22,9 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
 
   const deviceError = useMemo(() => {
-    if (selectionError) return selectionError;
     if (permissionError) return permissionError;
     if (enumerationError) return enumerationError;
+    if (selectionError) return selectionError;
     return "";
   }, [enumerationError, permissionError, selectionError]);
 
@@ -60,6 +60,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
+    if (!navigator.mediaDevices?.getUserMedia) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
   }, [audioDevices, hasEnumeratedDevices]);
@@ -80,6 +81,12 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       for (const track of stream.getTracks()) track.stop();
       await refreshAudioDevices();
     } catch (err) {
+      if (err instanceof Error && err.name === "OverconstrainedError") {
+        setAudioDeviceId("");
+        setSelectionError(MISSING_SELECTION_ERROR);
+        return;
+      }
+
       setPermissionError(err instanceof Error ? err.message : "Microphone permission denied.");
     }
   }, [audioDeviceId, refreshAudioDevices]);
