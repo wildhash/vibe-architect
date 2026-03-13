@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -20,6 +20,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [permissionError, setPermissionError] = useState("");
   const [selectionError, setSelectionError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
+  const enumerateSeqRef = useRef(0);
 
   const deviceError = useMemo(() => {
     if (permissionError) return permissionError;
@@ -29,23 +30,31 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   }, [enumerationError, permissionError, selectionError]);
 
   const refreshAudioDevices = useCallback(async () => {
+    const seq = ++enumerateSeqRef.current;
+
     if (!navigator.mediaDevices?.enumerateDevices) {
       const msg = "Audio device selection is not supported in this browser.";
-      setEnumerationError(msg);
-      setHasEnumeratedDevices(true);
+      if (seq === enumerateSeqRef.current) {
+        setEnumerationError(msg);
+        setHasEnumeratedDevices(true);
+      }
       return;
     }
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
+      if (seq !== enumerateSeqRef.current) return;
+
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
       setEnumerationError("");
     } catch (err) {
+      if (seq !== enumerateSeqRef.current) return;
+
       const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
       setEnumerationError(msg);
     } finally {
-      setHasEnumeratedDevices(true);
+      if (seq === enumerateSeqRef.current) setHasEnumeratedDevices(true);
     }
   }, []);
 

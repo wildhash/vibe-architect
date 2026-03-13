@@ -4,7 +4,7 @@ import {
   useRoomContext,
   useDataChannel,
 } from "@livekit/components-react";
-import { RoomEvent, ConnectionState } from "livekit-client";
+import { RoomEvent, ConnectionState, MediaDeviceFailure } from "livekit-client";
 
 import { ConnectionPanel } from "./components/ConnectionPanel";
 import { StatusBar } from "./components/StatusBar";
@@ -243,16 +243,22 @@ export default function App() {
       }}
       onMediaDeviceFailure={(failure, kind) => {
         if (!failure) return;
-        const failureValue: unknown = failure;
-        const message =
-          typeof failureValue === "string"
-            ? failureValue
-            : failureValue instanceof Error
-              ? failureValue.message
-              : "Unexpected media device error";
+        const msg =
+          failure === MediaDeviceFailure.PermissionDenied
+            ? "Permission denied."
+            : failure === MediaDeviceFailure.NotFound
+              ? "Device not found."
+              : failure === MediaDeviceFailure.DeviceInUse
+                ? "Device is already in use."
+                : String(failure);
 
-        setConnectionError(`Media device failure (${kind ?? "unknown"}): ${message}`);
-        if (kind === "audioinput") setAudioDeviceId(undefined);
+        setConnectionError(`Media device failure (${kind ?? "unknown"}): ${msg}`);
+
+        const shouldClearAudioSelection =
+          kind === "audioinput" &&
+          (failure === MediaDeviceFailure.NotFound ||
+            failure === MediaDeviceFailure.DeviceInUse);
+        if (shouldClearAudioSelection) setAudioDeviceId(undefined);
         setConnected(false);
         setIsConnecting(false);
       }}
