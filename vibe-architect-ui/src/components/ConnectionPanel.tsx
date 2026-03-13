@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -17,13 +17,13 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
-  const [enumerateError, setEnumerateError] = useState<string | null>(null);
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
+  const lastEnumerateErrorRef = useRef<string | null>(null);
 
   const refreshAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
       const msg = "Audio device selection is not supported in this browser.";
-      setEnumerateError(msg);
+      lastEnumerateErrorRef.current = msg;
       setDeviceError(msg);
       setHasEnumeratedDevices(true);
       return;
@@ -34,18 +34,19 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
 
-      if (enumerateError) {
-        setDeviceError((prev) => (prev === enumerateError ? "" : prev));
-        setEnumerateError(null);
+      const lastEnumerateError = lastEnumerateErrorRef.current;
+      if (lastEnumerateError) {
+        setDeviceError((prev) => (prev === lastEnumerateError ? "" : prev));
+        lastEnumerateErrorRef.current = null;
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
-      setEnumerateError(msg);
+      lastEnumerateErrorRef.current = msg;
       setDeviceError(msg);
     } finally {
       setHasEnumeratedDevices(true);
     }
-  }, [enumerateError]);
+  }, []);
 
   useEffect(() => {
     if (!hasEnumeratedDevices) return;
