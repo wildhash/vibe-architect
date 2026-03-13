@@ -3,29 +3,35 @@ steps:
     dir: agent
     entrypoint: python
     args:
-      - -m
-      - py_compile
-      - agent.py
-      - tools.py
-      - state.py
+      - -c
+      - |
+        import pathlib
+        import py_compile
+
+        for p in pathlib.Path(".").rglob("*.py"):
+            py_compile.compile(str(p), doraise=True)
 
   - name: gcr.io/cloud-builders/docker
+    entrypoint: bash
     args:
-      - build
-      - -f
-      - ./agent/Dockerfile
-      - -t
-      - ${_IMAGE_URI}:$SHORT_SHA
-      - -t
-      - ${_IMAGE_URI}:latest
-      - ./agent
+      - -ceu
+      - |
+        docker build \
+          -f ./agent/Dockerfile \
+          -t ${_IMAGE_URI}:$SHORT_SHA \
+          ./agent
+
+        if [[ "${_PUSH_LATEST}" == "true" ]]; then
+          docker tag ${_IMAGE_URI}:$SHORT_SHA ${_IMAGE_URI}:latest
+          docker push ${_IMAGE_URI}:latest
+        fi
 
 images:
   - ${_IMAGE_URI}:$SHORT_SHA
-  - ${_IMAGE_URI}:latest
 
 substitutions:
   _IMAGE_URI: gcr.io/${PROJECT_ID}/vibe-architect-agent
+  _PUSH_LATEST: "false"
 
 options:
   dynamicSubstitutions: true
