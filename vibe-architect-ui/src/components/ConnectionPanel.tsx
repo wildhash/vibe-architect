@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 interface ConnectionPanelProps {
@@ -15,6 +15,11 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
 
+  const audioDeviceIdRef = useRef(audioDeviceId);
+  useEffect(() => {
+    audioDeviceIdRef.current = audioDeviceId;
+  }, [audioDeviceId]);
+
   const refreshAudioDevices = useCallback(async () => {
     setDeviceError("");
 
@@ -28,7 +33,8 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
 
-      if (audioDeviceId && !audioInputs.some((d) => d.deviceId === audioDeviceId)) {
+      const selectedId = audioDeviceIdRef.current;
+      if (selectedId && !audioInputs.some((d) => d.deviceId === selectedId)) {
         setAudioDeviceId("");
         setDeviceError(
           "Selected audio input is no longer available; reverted to default input."
@@ -37,7 +43,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : "Failed to list audio devices.");
     }
-  }, [audioDeviceId]);
+  }, []);
 
   const hasDeviceLabels = useMemo(() => {
     if (audioDevices.length === 0) return true;
