@@ -69,6 +69,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
+    if (typeof navigator === "undefined") return false;
     if (!navigator.mediaDevices?.getUserMedia) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
@@ -160,7 +161,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             id="lk-audio-device"
             value={audioDeviceId}
             onChange={(e) => {
-              if (selectionError === MISSING_SELECTION_ERROR) setSelectionError("");
+              if (selectionError) setSelectionError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
