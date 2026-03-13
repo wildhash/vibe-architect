@@ -255,9 +255,7 @@ export default function App() {
         setConnectionError(`Media device failure (${kind ?? "unknown"}): ${msg}`);
 
         const shouldClearAudioSelection =
-          kind === "audioinput" &&
-          (failure === MediaDeviceFailure.NotFound ||
-            failure === MediaDeviceFailure.DeviceInUse);
+          kind === "audioinput" && failure === MediaDeviceFailure.NotFound;
         if (shouldClearAudioSelection) setAudioDeviceId(undefined);
         setConnected(false);
         setIsConnecting(false);
