@@ -250,7 +250,7 @@ export default function App() {
               ? "Device not found."
               : failure === MediaDeviceFailure.DeviceInUse
                 ? "Device is already in use."
-                : String(failure);
+                : "Unknown media device failure.";
 
         setConnectionError(`Media device failure (${kind ?? "unknown"}): ${msg}`);
 
