@@ -10,3 +10,15 @@ __pycache__/
 .env
 *.log
 .DS_Store
+.git/
+
+dist/
+build/
+
+.idea/
+.vscode/
+
+*.tar
+*.tgz
+*.zip
+*.whl
