@@ -13,8 +13,6 @@ steps:
 
   - name: gcr.io/cloud-builders/docker
     entrypoint: sh
-    env:
-      - BRANCH_NAME=$BRANCH_NAME
     args:
       - -c
       - |
@@ -22,19 +20,22 @@ steps:
 
         docker build \
           -f ./agent/Dockerfile \
-          -t ${_IMAGE_URI}:$SHORT_SHA \
+          -t "${_IMAGE_URI}:$SHORT_SHA" \
           ./agent
 
-        docker push ${_IMAGE_URI}:$SHORT_SHA
-
-        if [ "${_PUSH_LATEST}" = "true" ] || [ "${BRANCH_NAME}" = "main" ]; then
-          docker tag ${_IMAGE_URI}:$SHORT_SHA ${_IMAGE_URI}:latest
-          docker push ${_IMAGE_URI}:latest
+        if [ "${_PUSH_LATEST}" = "true" ] || [ "${BRANCH_NAME:-}" = "main" ]; then
+          docker tag "${_IMAGE_URI}:$SHORT_SHA" "${_IMAGE_URI}:latest"
+          docker push "${_IMAGE_URI}:latest"
         fi
+
+images:
+  - ${_IMAGE_URI}:$SHORT_SHA
+  # Note: :latest is pushed conditionally in the step above (not listed here).
 
 substitutions:
   _IMAGE_URI: gcr.io/${PROJECT_ID}/vibe-architect-agent
   _PUSH_LATEST: "false"
 
 options:
+  automapSubstitutions: true
   dynamicSubstitutions: true
