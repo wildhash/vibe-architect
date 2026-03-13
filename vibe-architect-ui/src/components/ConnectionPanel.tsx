@@ -14,12 +14,17 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [audioDeviceId, setAudioDeviceId] = useState("");
   const [deviceError, setDeviceError] = useState("");
+  const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
+
+  const missingSelectionError =
+    "Selected audio input is no longer available; reverted to default input.";
 
   const refreshAudioDevices = useCallback(async () => {
     setDeviceError("");
 
     if (!navigator.mediaDevices?.enumerateDevices) {
       setDeviceError("Audio device selection is not supported in this browser.");
+      setHasEnumeratedDevices(true);
       return;
     }
 
@@ -29,16 +34,19 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       setAudioDevices(audioInputs);
     } catch (err) {
       setDeviceError(err instanceof Error ? err.message : "Failed to list audio devices.");
+    } finally {
+      setHasEnumeratedDevices(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!hasEnumeratedDevices) return;
     if (!audioDeviceId) return;
     if (!audioDevices.some((d) => d.deviceId === audioDeviceId)) {
       setAudioDeviceId("");
-      setDeviceError("Selected audio input is no longer available; reverted to default input.");
+      setDeviceError(missingSelectionError);
     }
-  }, [audioDeviceId, audioDevices]);
+  }, [audioDeviceId, audioDevices, hasEnumeratedDevices, missingSelectionError]);
 
   const hasDeviceLabels = useMemo(() => {
     if (audioDevices.length === 0) return true;
@@ -125,7 +133,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             id="lk-audio-device"
             value={audioDeviceId}
             onChange={(e) => {
-              setDeviceError("");
+              if (deviceError === missingSelectionError) setDeviceError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
