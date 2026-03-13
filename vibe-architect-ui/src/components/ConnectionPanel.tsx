@@ -74,7 +74,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: audioDeviceId ? { deviceId: { exact: audioDeviceId } } : true,
         video: false,
       });
       for (const track of stream.getTracks()) track.stop();
@@ -82,7 +82,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     } catch (err) {
       setPermissionError(err instanceof Error ? err.message : "Microphone permission denied.");
     }
-  }, [refreshAudioDevices]);
+  }, [audioDeviceId, refreshAudioDevices]);
 
   useEffect(() => {
     if (!navigator.mediaDevices) return;
