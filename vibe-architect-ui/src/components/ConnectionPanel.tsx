@@ -69,11 +69,12 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
+    if (enumerationError) return false;
     if (typeof navigator === "undefined") return false;
     if (!navigator.mediaDevices?.getUserMedia) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
-  }, [audioDevices, hasEnumeratedDevices]);
+  }, [audioDevices, enumerationError, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
     setPermissionError("");
