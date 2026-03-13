@@ -54,9 +54,10 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
+    if (enumerationError) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
-  }, [audioDevices, hasEnumeratedDevices]);
+  }, [audioDevices, enumerationError, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
     setPermissionError("");
@@ -138,7 +139,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
             id="lk-audio-device"
             value={audioDeviceId}
             onChange={(e) => {
-              if (selectionError) setSelectionError("");
+              if (selectionError === MISSING_SELECTION_ERROR) setSelectionError("");
               setAudioDeviceId(e.target.value);
             }}
             disabled={isConnecting}
