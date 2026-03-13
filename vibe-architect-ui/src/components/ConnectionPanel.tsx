@@ -94,6 +94,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       if (err instanceof Error && err.name === "OverconstrainedError") {
         setAudioDeviceId("");
         setSelectionError(MISSING_SELECTION_ERROR);
+        await refreshAudioDevices();
         return;
       }
 
