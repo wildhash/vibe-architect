@@ -22,6 +22,12 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
   const enumerateSeqRef = useRef(0);
 
+  useEffect(() => {
+    return () => {
+      enumerateSeqRef.current += 1;
+    };
+  }, []);
+
   const deviceError = useMemo(() => {
     if (permissionError) return permissionError;
     if (enumerationError) return enumerationError;
@@ -101,6 +107,7 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
       if (err instanceof Error && err.name === "OverconstrainedError") {
         setAudioDeviceId("");
         setSelectionError(MISSING_SELECTION_ERROR);
+        setEnumerationError("");
         await refreshAudioDevices();
         return;
       }
