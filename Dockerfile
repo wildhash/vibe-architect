@@ -15,11 +15,13 @@ FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=8080
 
 COPY --from=build /app/vibe-architect-ui/dist ./dist
 COPY server.mjs ./server.mjs
 
 EXPOSE 8080
 
+# The server listens on $PORT (Cloud Run convention).
 CMD ["node", "server.mjs"]

@@ -6,10 +6,14 @@ import path from "node:path";
 const distDir = path.join(process.cwd(), "dist");
 
 const portRaw = process.env.PORT;
-const port = portRaw ? Number(portRaw) : 8080;
-if (!Number.isFinite(port) || port <= 0) {
-  throw new Error(`Invalid PORT: ${String(portRaw)}`);
+const defaultPort = 8080;
+const portParsed = portRaw ? Number(portRaw) : defaultPort;
+if (!Number.isFinite(portParsed) || portParsed <= 0) {
+  // eslint-disable-next-line no-console
+  console.error(`Invalid PORT: ${String(portRaw)}. Expected a positive integer.`);
+  process.exit(1);
 }
+const port = portParsed;
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -26,9 +30,17 @@ const contentTypes = {
   ".wasm": "application/wasm",
 };
 
-function isAssetPath(urlPath) {
-  return urlPath.startsWith("/assets/") || urlPath.includes(".");
-}
+const cacheableExtensions = new Set([
+  ".css",
+  ".ico",
+  ".jpeg",
+  ".jpg",
+  ".js",
+  ".map",
+  ".png",
+  ".svg",
+  ".wasm",
+]);
 
 function toSafeFsPath(urlPath) {
   const normalizedUrlPath = path.posix.normalize(urlPath);
@@ -44,14 +56,27 @@ function toSafeFsPath(urlPath) {
   return fsPath;
 }
 
-async function serveFile(res, fsPath, { cache }) {
+function setFileHeaders(res, fsPath, { cache, size }) {
   const ext = path.extname(fsPath).toLowerCase();
   res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
+  if (typeof size === "number") res.setHeader("Content-Length", String(size));
   if (cache) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+}
+
+async function serveFile(req, res, fsPath, { cache }) {
+  const info = await stat(fsPath);
+  if (!info.isFile()) throw new Error("Not a file");
+
+  setFileHeaders(res, fsPath, { cache, size: info.size });
+  res.writeHead(200);
+
+  if (req.method === "HEAD") {
+    res.end();
+    return;
+  }
 
   const stream = createReadStream(fsPath);
   stream.on("error", () => {
-    if (!res.headersSent) res.writeHead(500);
     res.end("Internal Server Error");
   });
   stream.pipe(res);
@@ -94,19 +119,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const cache = isAssetPath(urlPath);
+  const urlExt = path.posix.extname(urlPath).toLowerCase();
+  const cache = urlPath.startsWith("/assets/") || cacheableExtensions.has(urlExt);
 
   try {
-    const info = await stat(fsPath);
-    if (!info.isFile()) throw new Error("Not a file");
-
-    if (req.method === "HEAD") {
-      res.writeHead(200);
-      res.end();
-      return;
-    }
-
-    await serveFile(res, fsPath, { cache });
+    await serveFile(req, res, fsPath, { cache });
     return;
   } catch {
     if (cache) {
@@ -117,16 +134,7 @@ const server = http.createServer(async (req, res) => {
 
     const indexPath = path.join(distDir, "index.html");
     try {
-      const info = await stat(indexPath);
-      if (!info.isFile()) throw new Error("Not a file");
-
-      if (req.method === "HEAD") {
-        res.writeHead(200);
-        res.end();
-        return;
-      }
-
-      await serveFile(res, indexPath, { cache: false });
+      await serveFile(req, res, indexPath, { cache: false });
     } catch {
       res.writeHead(500);
       res.end("Internal Server Error");
