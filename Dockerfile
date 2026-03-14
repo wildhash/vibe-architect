@@ -15,8 +15,7 @@ FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
-ENV NODE_ENV=production \
-    PORT=8080
+ENV NODE_ENV=production
 
 COPY --from=build /app/vibe-architect-ui/dist ./dist
 COPY server.mjs ./server.mjs

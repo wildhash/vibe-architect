@@ -42,6 +42,14 @@ const cacheableExtensions = new Set([
   ".wasm",
 ]);
 
+class NotAFileError extends Error {
+  constructor(fsPath) {
+    super("Not a file");
+    this.name = "NotAFileError";
+    this.fsPath = fsPath;
+  }
+}
+
 function toSafeFsPath(urlPath) {
   const normalizedUrlPath = path.posix.normalize(urlPath);
   if (!normalizedUrlPath.startsWith("/")) return null;
@@ -60,26 +68,51 @@ function setFileHeaders(res, fsPath, { cache, size }) {
   const ext = path.extname(fsPath).toLowerCase();
   res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
   if (typeof size === "number") res.setHeader("Content-Length", String(size));
-  if (cache) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+  if (cache && ext !== ".html") {
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  } else {
+    res.setHeader("Cache-Control", "no-cache");
+  }
+}
+
+function isNotFoundError(err) {
+  if (!err || typeof err !== "object") return false;
+  const code = "code" in err ? err.code : undefined;
+  if (code === "ENOENT" || code === "ENOTDIR") return true;
+  return err instanceof NotAFileError;
+}
+
+function respond500(res) {
+  if (!res.headersSent) {
+    res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Internal Server Error");
+    return;
+  }
+
+  res.destroy();
 }
 
 async function serveFile(req, res, fsPath, { cache }) {
   const info = await stat(fsPath);
-  if (!info.isFile()) throw new Error("Not a file");
+  if (!info.isFile()) throw new NotAFileError(fsPath);
 
   setFileHeaders(res, fsPath, { cache, size: info.size });
-  res.writeHead(200);
 
   if (req.method === "HEAD") {
+    res.writeHead(200);
     res.end();
     return;
   }
 
   const stream = createReadStream(fsPath);
   stream.on("error", () => {
-    res.end("Internal Server Error");
+    respond500(res);
   });
-  stream.pipe(res);
+  stream.on("open", () => {
+    if (!res.headersSent) res.writeHead(200);
+    stream.pipe(res);
+  });
 }
 
 const server = http.createServer(async (req, res) => {
@@ -125,10 +158,20 @@ const server = http.createServer(async (req, res) => {
   try {
     await serveFile(req, res, fsPath, { cache });
     return;
-  } catch {
+  } catch (err) {
     if (cache) {
-      res.writeHead(404);
-      res.end("Not Found");
+      if (isNotFoundError(err)) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not Found");
+        return;
+      }
+
+      respond500(res);
+      return;
+    }
+
+    if (!isNotFoundError(err)) {
+      respond500(res);
       return;
     }
 
@@ -136,8 +179,7 @@ const server = http.createServer(async (req, res) => {
     try {
       await serveFile(req, res, indexPath, { cache: false });
     } catch {
-      res.writeHead(500);
-      res.end("Internal Server Error");
+      respond500(res);
     }
   }
 });
