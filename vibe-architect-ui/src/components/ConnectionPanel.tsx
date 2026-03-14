@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMockToken, getMockUrl } from "../lib/mockToken";
 
 const MISSING_SELECTION_ERROR =
@@ -20,26 +20,48 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
   const [permissionError, setPermissionError] = useState("");
   const [selectionError, setSelectionError] = useState("");
   const [hasEnumeratedDevices, setHasEnumeratedDevices] = useState(false);
-  const deviceError = selectionError || permissionError || enumerationError;
+  const enumerateSeqRef = useRef(0);
+
+  useEffect(() => {
+    // Invalidate any in-flight enumerateDevices calls so they can't update state after unmount.
+    return () => {
+      enumerateSeqRef.current += 1;
+    };
+  }, []);
+
+  const deviceError = useMemo(() => {
+    if (permissionError) return permissionError;
+    if (enumerationError) return enumerationError;
+    if (selectionError) return selectionError;
+    return "";
+  }, [enumerationError, permissionError, selectionError]);
 
   const refreshAudioDevices = useCallback(async () => {
+    const seq = ++enumerateSeqRef.current;
+
     if (!navigator.mediaDevices?.enumerateDevices) {
       const msg = "Audio device selection is not supported in this browser.";
-      setEnumerationError(msg);
-      setHasEnumeratedDevices(true);
+      if (seq === enumerateSeqRef.current) {
+        setEnumerationError(msg);
+        setHasEnumeratedDevices(true);
+      }
       return;
     }
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
+      if (seq !== enumerateSeqRef.current) return;
+
       const audioInputs = devices.filter((d) => d.kind === "audioinput");
       setAudioDevices(audioInputs);
       setEnumerationError("");
     } catch (err) {
+      if (seq !== enumerateSeqRef.current) return;
+
       const msg = err instanceof Error ? err.message : "Failed to list audio devices.";
       setEnumerationError(msg);
     } finally {
-      setHasEnumeratedDevices(true);
+      if (seq === enumerateSeqRef.current) setHasEnumeratedDevices(true);
     }
   }, []);
 
@@ -52,11 +74,16 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
     }
   }, [audioDeviceId, audioDevices, hasEnumeratedDevices]);
 
+  // Only show the mic permission CTA when enumeration succeeded; otherwise we'd be
+  // prompting for permission in cases where the real issue is enumeration/support.
   const shouldPromptForMicPermission = useMemo(() => {
     if (!hasEnumeratedDevices) return false;
+    if (enumerationError) return false;
+    if (typeof navigator === "undefined") return false;
+    if (!navigator.mediaDevices?.getUserMedia) return false;
     if (audioDevices.length === 0) return true;
     return audioDevices.every((d) => !d.label);
-  }, [audioDevices, hasEnumeratedDevices]);
+  }, [audioDevices, enumerationError, hasEnumeratedDevices]);
 
   const requestMicPermissionForLabels = useCallback(async () => {
     setPermissionError("");
@@ -68,15 +95,24 @@ export function ConnectionPanel({ onConnect, isConnecting, error }: ConnectionPa
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: audioDeviceId ? { deviceId: { exact: audioDeviceId } } : true,
         video: false,
       });
       for (const track of stream.getTracks()) track.stop();
       await refreshAudioDevices();
     } catch (err) {
+      if (err instanceof Error && err.name === "OverconstrainedError") {
+        setAudioDeviceId("");
+        setSelectionError(MISSING_SELECTION_ERROR);
+        setPermissionError("");
+        setEnumerationError("");
+        await refreshAudioDevices();
+        return;
+      }
+
       setPermissionError(err instanceof Error ? err.message : "Microphone permission denied.");
     }
-  }, [refreshAudioDevices]);
+  }, [audioDeviceId, refreshAudioDevices]);
 
   useEffect(() => {
     if (!navigator.mediaDevices) return;
