@@ -31,7 +31,7 @@ const contentTypes = {
   ".wasm": "application/wasm",
 };
 
-const cacheableExtensions = new Set([
+const assetExtensions = new Set([
   ".css",
   ".ico",
   ".jpeg",
@@ -56,16 +56,22 @@ function toSafeFsPath(urlPath) {
   if (!normalizedUrlPath.startsWith("/")) return null;
 
   const stripped = normalizedUrlPath.replace(/^\/+/, "");
-  if (stripped === "") return path.join(distDir, "index.html");
+  if (stripped.includes("\0")) return null;
 
-  const fsPath = path.join(distDir, stripped);
-  const rel = path.relative(distDir, fsPath);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
+  const candidate = stripped === "" ? "index.html" : stripped;
 
-  return fsPath;
+  const resolvedDist = path.resolve(distDir);
+  const resolved = path.resolve(resolvedDist, candidate);
+  const resolvedDistPrefix = resolvedDist.endsWith(path.sep)
+    ? resolvedDist
+    : `${resolvedDist}${path.sep}`;
+
+  if (!resolved.startsWith(resolvedDistPrefix)) return null;
+
+  return resolved;
 }
 
-function setFileHeaders(res, fsPath, { cache, size }) {
+function setFileHeaders(res, fsPath, { asset, size }) {
   const ext = path.extname(fsPath).toLowerCase();
   res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
   if (typeof size === "number") res.setHeader("Content-Length", String(size));
@@ -76,7 +82,7 @@ function setFileHeaders(res, fsPath, { cache, size }) {
     return;
   }
 
-  if (cache && ext !== ".html") {
+  if (asset && ext !== ".html") {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   } else {
     res.setHeader("Cache-Control", "no-cache");
@@ -91,6 +97,7 @@ function isNotFoundError(err) {
 }
 
 function respond500(res) {
+  if (res.destroyed) return;
   if (!res.headersSent) {
     res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Internal Server Error");
@@ -100,11 +107,20 @@ function respond500(res) {
   res.destroy();
 }
 
-async function serveFile(req, res, fsPath, { cache }) {
+async function serveFile(req, res, fsPath, { asset }) {
   const info = await stat(fsPath);
   if (!info.isFile()) throw new NotAFileError(fsPath);
 
-  setFileHeaders(res, fsPath, { cache, size: info.size });
+  if (req.headers.range) {
+    res.writeHead(416, {
+      "Content-Range": `bytes */${info.size}`,
+      "Content-Type": "text/plain; charset=utf-8",
+    });
+    res.end("Range Not Satisfiable");
+    return;
+  }
+
+  setFileHeaders(res, fsPath, { asset, size: info.size });
 
   if (req.method === "HEAD") {
     res.writeHead(200);
@@ -113,6 +129,9 @@ async function serveFile(req, res, fsPath, { cache }) {
   }
 
   const stream = createReadStream(fsPath);
+  res.once("close", () => {
+    stream.destroy();
+  });
   stream.on("error", () => {
     respond500(res);
   });
@@ -160,13 +179,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   const urlExt = path.posix.extname(urlPath).toLowerCase();
-  const cache = urlPath.startsWith("/assets/") || cacheableExtensions.has(urlExt);
+  const asset = urlPath.startsWith("/assets/") || assetExtensions.has(urlExt);
 
   try {
-    await serveFile(req, res, fsPath, { cache });
+    await serveFile(req, res, fsPath, { asset });
     return;
   } catch (err) {
-    if (cache) {
+    if (asset) {
       if (isNotFoundError(err)) {
         res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
         res.end("Not Found");
@@ -184,7 +203,7 @@ const server = http.createServer(async (req, res) => {
 
     const indexPath = path.join(distDir, "index.html");
     try {
-      await serveFile(req, res, indexPath, { cache: false });
+      await serveFile(req, res, indexPath, { asset: false });
     } catch {
       respond500(res);
     }
