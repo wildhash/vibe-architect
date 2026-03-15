@@ -4,6 +4,7 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 
 const distDir = path.join(process.cwd(), "dist");
+const resolvedDistDir = path.resolve(distDir);
 
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
@@ -56,13 +57,13 @@ function toSafeFsPath(urlPath) {
   if (!normalizedUrlPath.startsWith("/")) return null;
 
   const stripped = normalizedUrlPath.replace(/^\/+/, "");
-  if (stripped === "") return path.join(distDir, "index.html");
+  const candidate = stripped === "" ? "index.html" : stripped;
 
-  const fsPath = path.join(distDir, stripped);
-  const rel = path.relative(distDir, fsPath);
+  const resolved = path.resolve(resolvedDistDir, candidate);
+  const rel = path.relative(resolvedDistDir, resolved);
   if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
 
-  return fsPath;
+  return resolved;
 }
 
 function setFileHeaders(res, fsPath, { cache, size }) {
