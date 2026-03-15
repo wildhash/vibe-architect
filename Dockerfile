@@ -17,8 +17,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=build /app/vibe-architect-ui/dist ./dist
-COPY server.mjs ./server.mjs
+RUN addgroup -S app && adduser -S -G app app
+
+COPY --from=build --chown=app:app /app/vibe-architect-ui/dist ./dist
+COPY --chown=app:app server.mjs ./server.mjs
+
+USER app
 
 EXPOSE 8080
 
