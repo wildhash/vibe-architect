@@ -8,9 +8,9 @@ const distDir = path.join(process.cwd(), "dist");
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
 const portParsed = portRaw ? Number(portRaw) : defaultPort;
-if (!Number.isFinite(portParsed) || portParsed <= 0) {
+if (!Number.isInteger(portParsed) || portParsed <= 0 || portParsed > 65535) {
   // eslint-disable-next-line no-console
-  console.error(`Invalid PORT: ${String(portRaw)}. Expected a positive integer.`);
+  console.error(`Invalid PORT: ${String(portRaw)}. Expected an integer in range 1-65535.`);
   process.exit(1);
 }
 const port = portParsed;
@@ -36,7 +36,6 @@ const cacheableExtensions = new Set([
   ".jpeg",
   ".jpg",
   ".js",
-  ".map",
   ".png",
   ".svg",
   ".wasm",
@@ -68,6 +67,11 @@ function setFileHeaders(res, fsPath, { cache, size }) {
   const ext = path.extname(fsPath).toLowerCase();
   res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
   if (typeof size === "number") res.setHeader("Content-Length", String(size));
+
+  if (ext === ".map") {
+    res.setHeader("Cache-Control", "no-cache");
+    return;
+  }
 
   if (cache && ext !== ".html") {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
