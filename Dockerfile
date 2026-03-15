@@ -17,10 +17,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN addgroup -S app && adduser -S -G app app && chown -R app:app /app
+RUN addgroup -S app && adduser -S -G app app
 
-COPY --from=build --chown=app:app /app/vibe-architect-ui/dist ./dist
-COPY --chown=app:app server.mjs ./server.mjs
+COPY --from=build /app/vibe-architect-ui/dist ./dist
+COPY server.mjs ./server.mjs
+
+RUN chown -R app:app /app
 
 # Run as non-root for container hardening; do any privileged setup before this.
 USER app
