@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Pinned to a patch version for reproducible builds; bump periodically for security updates.
+# Pinned to a patch version for reproducible builds; bump periodically for security updates (Dependabot/Renovate).
 
 FROM node:22.22.0-alpine AS build
 

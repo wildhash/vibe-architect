@@ -4,8 +4,7 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 
 // dist/ is expected to contain only public build output (no secrets or private artifacts).
-const distDir = path.join(process.cwd(), "dist");
-const resolvedDistDir = path.resolve(distDir);
+const distDir = path.resolve(process.cwd(), "dist");
 
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
@@ -54,8 +53,8 @@ class NotAFileError extends Error {
 }
 
 /**
-* Convert a URL path to a safe absolute filesystem path under `resolvedDistDir`.
-* Returns `null` if the resolved path would escape `resolvedDistDir`.
+* Convert a URL path to a safe absolute filesystem path under `distDir`.
+* Returns `null` if the resolved path would escape `distDir`.
 */
 function toSafeFsPath(urlPath) {
   const normalizedUrlPath = path.posix.normalize(urlPath);
@@ -64,8 +63,10 @@ function toSafeFsPath(urlPath) {
   const stripped = normalizedUrlPath.replace(/^\/+/, "");
   const candidate = stripped === "" ? "index.html" : stripped;
 
-  const resolved = path.resolve(resolvedDistDir, candidate);
-  const rel = path.relative(resolvedDistDir, resolved);
+  const resolved = path.resolve(distDir, candidate);
+  const rel = path.relative(distDir, resolved);
+
+  // Reject any path that would resolve outside the dist directory (directory traversal protection).
   if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
 
   return resolved;
