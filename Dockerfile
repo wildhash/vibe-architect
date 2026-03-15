@@ -22,8 +22,6 @@ RUN addgroup -S app && adduser -S -G app app
 COPY --from=build /app/vibe-architect-ui/dist ./dist
 COPY server.mjs ./server.mjs
 
-RUN chown -R app:app /app
-
 # Run as non-root for container hardening; do any privileged setup before this.
 USER app
 
