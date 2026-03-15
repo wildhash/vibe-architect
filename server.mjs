@@ -37,6 +37,7 @@ const cacheableExtensions = new Set([
   ".jpeg",
   ".jpg",
   ".js",
+  ".map",
   ".png",
   ".svg",
   ".wasm",
