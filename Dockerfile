@@ -22,6 +22,7 @@ RUN addgroup -S app && adduser -S -G app app
 COPY --from=build --chown=app:app /app/vibe-architect-ui/dist ./dist
 COPY --chown=app:app server.mjs ./server.mjs
 
+# Run as non-root for container hardening; do any privileged setup before this.
 USER app
 
 EXPOSE 8080
