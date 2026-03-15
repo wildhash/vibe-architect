@@ -8,6 +8,7 @@ const distDir = path.join(process.cwd(), "dist");
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
 const portParsed = portRaw ? Number(portRaw) : defaultPort;
+// PORT must be a valid TCP port integer (Cloud Run normally sets this correctly).
 if (!Number.isInteger(portParsed) || portParsed <= 0 || portParsed > 65535) {
   // eslint-disable-next-line no-console
   console.error(`Invalid PORT: ${String(portRaw)}. Expected an integer in range 1-65535.`);
@@ -68,6 +69,7 @@ function setFileHeaders(res, fsPath, { cache, size }) {
   res.setHeader("Content-Type", contentTypes[ext] ?? "application/octet-stream");
   if (typeof size === "number") res.setHeader("Content-Length", String(size));
 
+  // Avoid long-term caching for source maps to reduce accidental exposure/staleness.
   if (ext === ".map") {
     res.setHeader("Cache-Control", "no-cache");
     return;

@@ -19,6 +19,7 @@ ENV NODE_ENV=production
 
 RUN addgroup -S app && adduser -S -G app app && chown app:app /app
 
+# Keep runtime files owned by `app` (use --chown for any newly copied files).
 COPY --from=build --chown=app:app /app/vibe-architect-ui/dist ./dist
 COPY --chown=app:app server.mjs ./server.mjs
 
