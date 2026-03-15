@@ -4,6 +4,10 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 
 const distDir = path.join(process.cwd(), "dist");
+const resolvedDistDir = path.resolve(distDir);
+const resolvedDistDirPrefix = resolvedDistDir.endsWith(path.sep)
+  ? resolvedDistDir
+  : `${resolvedDistDir}${path.sep}`;
 
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
@@ -31,6 +35,8 @@ const contentTypes = {
   ".wasm": "application/wasm",
 };
 
+// Requests classified as assets bypass the SPA `index.html` fallback. Most of them are
+// served with immutable caching; `.map` is explicitly `no-cache`.
 const assetExtensions = new Set([
   ".css",
   ".ico",
@@ -60,13 +66,8 @@ function toSafeFsPath(urlPath) {
 
   const candidate = stripped === "" ? "index.html" : stripped;
 
-  const resolvedDist = path.resolve(distDir);
-  const resolved = path.resolve(resolvedDist, candidate);
-  const resolvedDistPrefix = resolvedDist.endsWith(path.sep)
-    ? resolvedDist
-    : `${resolvedDist}${path.sep}`;
-
-  if (!resolved.startsWith(resolvedDistPrefix)) return null;
+  const resolved = path.resolve(resolvedDistDir, candidate);
+  if (!resolved.startsWith(resolvedDistDirPrefix)) return null;
 
   return resolved;
 }
