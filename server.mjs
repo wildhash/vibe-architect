@@ -3,6 +3,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 
+// dist/ is expected to contain only public build output (no secrets or private artifacts).
 const distDir = path.join(process.cwd(), "dist");
 const resolvedDistDir = path.resolve(distDir);
 

@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+# Pinned to a patch version for reproducible builds; bump periodically for security updates.
+
 FROM node:22.22.0-alpine AS build
 
 WORKDIR /app
