@@ -53,6 +53,10 @@ class NotAFileError extends Error {
   }
 }
 
+/**
+* Convert a URL path to a safe absolute filesystem path under `resolvedDistDir`.
+* Returns `null` if the resolved path would escape `resolvedDistDir`.
+*/
 function toSafeFsPath(urlPath) {
   const normalizedUrlPath = path.posix.normalize(urlPath);
   if (!normalizedUrlPath.startsWith("/")) return null;
