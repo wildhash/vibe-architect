@@ -5,9 +5,6 @@ import path from "node:path";
 
 const distDir = path.join(process.cwd(), "dist");
 const resolvedDistDir = path.resolve(distDir);
-const resolvedDistDirPrefix = resolvedDistDir.endsWith(path.sep)
-  ? resolvedDistDir
-  : `${resolvedDistDir}${path.sep}`;
 
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
@@ -67,7 +64,8 @@ function toSafeFsPath(urlPath) {
   const candidate = stripped === "" ? "index.html" : stripped;
 
   const resolved = path.resolve(resolvedDistDir, candidate);
-  if (!resolved.startsWith(resolvedDistDirPrefix)) return null;
+  const rel = path.relative(resolvedDistDir, resolved);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
 
   return resolved;
 }
@@ -202,7 +200,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const indexPath = path.join(distDir, "index.html");
+    const indexPath = path.resolve(resolvedDistDir, "index.html");
     try {
       await serveFile(req, res, indexPath, { asset: false });
     } catch {
