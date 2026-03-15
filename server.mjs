@@ -53,7 +53,7 @@ class NotAFileError extends Error {
 }
 
 /**
-* Convert a URL path to a safe absolute filesystem path under `distDir`.
+* Convert a URL path into a safe absolute filesystem path under `distDir`.
 * Returns `null` if the resolved path would escape `distDir`.
 */
 function toSafeFsPath(urlPath) {
