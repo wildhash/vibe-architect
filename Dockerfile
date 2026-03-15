@@ -17,7 +17,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN addgroup -S app && adduser -S -G app app
+RUN addgroup -S app && adduser -S -G app app && chown app:app /app
 
 COPY --from=build --chown=app:app /app/vibe-architect-ui/dist ./dist
 COPY --chown=app:app server.mjs ./server.mjs
