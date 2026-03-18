@@ -3,7 +3,8 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 
-const distDir = path.join(process.cwd(), "dist");
+// dist/ is expected to contain only public build output (no secrets or private artifacts).
+const distDir = path.resolve(process.cwd(), "dist");
 
 const portRaw = process.env.PORT;
 const defaultPort = 8080;
@@ -51,18 +52,24 @@ class NotAFileError extends Error {
   }
 }
 
+/**
+* Convert a URL path into a safe absolute filesystem path under `distDir`.
+* Returns `null` if the resolved path would escape `distDir`.
+*/
 function toSafeFsPath(urlPath) {
   const normalizedUrlPath = path.posix.normalize(urlPath);
   if (!normalizedUrlPath.startsWith("/")) return null;
 
   const stripped = normalizedUrlPath.replace(/^\/+/, "");
-  if (stripped === "") return path.join(distDir, "index.html");
+  const candidate = stripped === "" ? "index.html" : stripped;
 
-  const fsPath = path.join(distDir, stripped);
-  const rel = path.relative(distDir, fsPath);
+  const resolved = path.resolve(distDir, candidate);
+  const rel = path.relative(distDir, resolved);
+
+  // Reject any path that would resolve outside the dist directory (directory traversal protection).
   if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
 
-  return fsPath;
+  return resolved;
 }
 
 function setFileHeaders(res, fsPath, { cache, size }) {
